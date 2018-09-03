@@ -1,5 +1,6 @@
 package programming.test;
 
+import org.apache.log4j.Logger;
 import programming.test.pojo.ConsumerWithException;
 import programming.test.pojo.FileInfo;
 
@@ -10,7 +11,9 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-public final class InputFilesReader {
+final class InputFilesReader {
+
+    private final static Logger logger = Logger.getLogger(InputFilesReader.class);
 
     private static final String DOCUMENT_NAME_TAG = "DOCUMENT_NAME";
     private static final String VERSION_TAG = "VERSION";
@@ -19,12 +22,6 @@ public final class InputFilesReader {
 
     private XMLInputFactory factory;
 
-    public static void main(String... s) throws FileNotFoundException, XMLStreamException {
-        InputFilesReader inputFilesReader = new InputFilesReader();
-        inputFilesReader.init();
-        inputFilesReader.read("C:\\var\\mnt\\fserver\\mirax\\processor\\file.xml", System.out::println);
-    }
-
     void init() {
         factory = XMLInputFactory.newInstance();
     }
@@ -32,7 +29,7 @@ public final class InputFilesReader {
     void read(String filename, ConsumerWithException<FileInfo, XMLStreamException> consumer) throws FileNotFoundException, XMLStreamException {
         final XMLStreamReader streamReader = factory.createXMLStreamReader(filename, new FileInputStream(filename));
         while (streamReader.hasNext()) {
-            System.out.println(filename);
+            logger.info("Reading " + filename);
             streamReader.next();
             if (streamReader.getEventType() == XMLStreamConstants.START_ELEMENT && FILE_TAG.equals(streamReader.getName().toString())) {
                 final FileInfo fileInfo = extractFileInfo(streamReader);

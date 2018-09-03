@@ -1,5 +1,6 @@
 package programming.test;
 
+import org.apache.log4j.Logger;
 import programming.test.generator.ClientFileGenerator;
 import programming.test.generator.ServerFileGenerator;
 
@@ -11,6 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class DictionaryGenerator {
+
+    private final static Logger logger = Logger.getLogger(DictionaryGenerator.class);
 
     private static final String INPUT_FILES_FLAG = "-i";
     private static final String DESTINATION_CLIENT_DIRECTORY_FLAG = "-c";
@@ -28,7 +31,7 @@ public final class DictionaryGenerator {
     }
 
     private void init(String[] parameters) {
-        if (parameters.length == NBR_PARAMETERS) {
+        if (parameters.length >= NBR_PARAMETERS) {
             for (int i = 0; i < NBR_PARAMETERS; i++) {
                 final String parameter = parameters[i++];
                 switch (parameter) {
@@ -88,7 +91,7 @@ public final class DictionaryGenerator {
                         serverFileGenerator.writeAFileInfoInServerFile(outputDirectoryForServerFile, f);
                     });
                 } catch (XMLStreamException e) {
-                    e.printStackTrace();
+                    logger.error(e);
                 }
             }
         } catch (IOException ex) {
@@ -99,12 +102,12 @@ public final class DictionaryGenerator {
     }
 
     private static void stopWithException(Throwable t) {
-        t.printStackTrace();
+        logger.error(t);
         System.exit(-1);
     }
 
     private static void stopWithErrorMessage(String s) {
-        System.out.println(s);
+        logger.error(s);
         System.exit(-1);
     }
 
@@ -112,7 +115,7 @@ public final class DictionaryGenerator {
         System.out.println(getClass().getSimpleName() + " " + INPUT_FILES_FLAG + " <inputDirectoryFile> " +
                 DESTINATION_CLIENT_DIRECTORY_FLAG + " <clientOutputDirectoryFile> "
                 + DESTINATION_SERVER_DIRECTORY_FLAG + " <serverOutputDirectoryFile>");
-        System.out.println("\t" + INPUT_FILES_FLAG + "\tpath to the directory where the file are stored");
+        System.out.println("\t" + INPUT_FILES_FLAG + "\tpath to the directory where the files are stored");
         System.out.println("\t" + DESTINATION_CLIENT_DIRECTORY_FLAG + "\tpath to the directory where the file client.xml will be saved");
         System.out.println("\t" + DESTINATION_SERVER_DIRECTORY_FLAG + "\tpath to the directory where the file server.xml will be saved");
     }

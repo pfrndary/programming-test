@@ -1,17 +1,21 @@
 package programming.test.generator;
 
+import org.apache.log4j.Logger;
 import programming.test.pojo.FileInfo;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class ClientFileGenerator {
 
+    private final static Logger logger = Logger.getLogger(ClientFileGenerator.class);
+
+    private static final String CLIENT_FILENAME = "client.xml";
     private static final String FILES_TAG = "FILES";
     private static final String FILE_TAG = "FILE";
     private static final String DOCUMENT_NAME_TAG = "DOCUMENT_NAME";
@@ -21,11 +25,10 @@ public final class ClientFileGenerator {
     private XMLOutputFactory xof = XMLOutputFactory.newInstance();
     private XMLStreamWriter xtw = null;
 
-    private static final String CLIENT_FILENAME = "client.xml";
 
     public void initFile(String directory) throws IOException, XMLStreamException {
         final Path serverFilePath = Paths.get(directory, CLIENT_FILENAME);
-        xtw = xof.createXMLStreamWriter(new FileWriter(serverFilePath.toString()));
+        xtw = xof.createXMLStreamWriter(new FileOutputStream(serverFilePath.toString()), "UTF-8");
         xtw.writeStartDocument("utf-8", "1.0");
         xtw.writeStartElement(FILES_TAG);
     }

@@ -5,12 +5,13 @@ import programming.test.pojo.FileInfo;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class ServerFileGenerator {
+    private static final String SERVER_FILENAME = "server.xml";
     private static final String FILES_TAG = "FILES";
     private static final String FILE_TAG = "FILE";
     private static final String DOCUMENT_NAME_TAG = "DOCUMENT_NAME";
@@ -21,11 +22,10 @@ public final class ServerFileGenerator {
     private XMLOutputFactory xof = XMLOutputFactory.newInstance();
     private XMLStreamWriter xtw = null;
 
-    private static final String SERVER_FILENAME = "server.xml";
 
     public void initFile(String directory) throws IOException, XMLStreamException {
         final Path serverFilePath = Paths.get(directory, SERVER_FILENAME);
-        xtw = xof.createXMLStreamWriter(new FileWriter(serverFilePath.toString()));
+        xtw = xof.createXMLStreamWriter(new FileOutputStream(serverFilePath.toString()), "UTF-8");
         xtw.writeStartDocument("utf-8", "1.0");
         xtw.writeStartElement(FILES_TAG);
     }
@@ -54,6 +54,7 @@ public final class ServerFileGenerator {
 
         xtw.writeEndElement(); // FILE_TAG
     }
+
 
     public void close() throws XMLStreamException {
         xtw.writeEndElement();
