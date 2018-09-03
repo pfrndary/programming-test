@@ -76,19 +76,20 @@ public final class DictionaryGenerator {
         final ClientFileGenerator clientFileGenerator = new ClientFileGenerator();
         serverFileGenerator.initFile(outputDirectoryForServerFile);
         clientFileGenerator.initFile(outputDirectoryForClientFile);
+        // DirectoryStream is softer for the JVM, we don't load all the files in memory
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(inputDirectoryFiles))) {
             final InputFilesReader inputFilesReader = new InputFilesReader();
             for (Path path : directoryStream) {
-                // TODO manage files recursively
+                // TODO manage files recursively ?
                 if (Files.isDirectory(path)) {
                     continue;
                 }
-                final String pathToFile = path.toAbsolutePath().toString();
                 inputFilesReader.init();
+                final String pathToFile = path.toAbsolutePath().toString();
                 try {
                     inputFilesReader.read(pathToFile, f -> {
                         clientFileGenerator.writeAFileInfoInServerFile(f);
-                        serverFileGenerator.writeAFileInfoInServerFile(outputDirectoryForServerFile, f);
+                        serverFileGenerator.writeAFileInfoInServerFile(pathToFile, f);
                     });
                 } catch (XMLStreamException e) {
                     logger.error(e);
@@ -101,13 +102,15 @@ public final class DictionaryGenerator {
         clientFileGenerator.close();
     }
 
-    private static void stopWithException(Throwable t) {
+    private void stopWithException(Throwable t) {
         logger.error(t);
+        printUsage();
         System.exit(-1);
     }
 
-    private static void stopWithErrorMessage(String s) {
+    private void stopWithErrorMessage(String s) {
         logger.error(s);
+        printUsage();
         System.exit(-1);
     }
 

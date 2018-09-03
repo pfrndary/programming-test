@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class ServerFileGenerator {
-    private static final String SERVER_FILENAME = "server.xml";
+    public static final String SERVER_FILENAME = "server.xml";
     private static final String FILES_TAG = "FILES";
     private static final String FILE_TAG = "FILE";
     private static final String DOCUMENT_NAME_TAG = "DOCUMENT_NAME";
@@ -22,7 +22,13 @@ public final class ServerFileGenerator {
     private XMLOutputFactory xof = XMLOutputFactory.newInstance();
     private XMLStreamWriter xtw = null;
 
-
+    /**
+     * Initialize the file generator.
+     *
+     * @param directory Path where the file will be generated. For the file name see : {@link ServerFileGenerator#SERVER_FILENAME}
+     * @throws IOException        File error.
+     * @throws XMLStreamException XML stream error.
+     */
     public void initFile(String directory) throws IOException, XMLStreamException {
         final Path serverFilePath = Paths.get(directory, SERVER_FILENAME);
         xtw = xof.createXMLStreamWriter(new FileOutputStream(serverFilePath.toString()), "UTF-8");
@@ -30,8 +36,15 @@ public final class ServerFileGenerator {
         xtw.writeStartElement(FILES_TAG);
     }
 
-    public void writeAFileInfoInServerFile(String outputDirectory, FileInfo fileInfo) throws XMLStreamException {
-        writeAFileInfoInServerFile(outputDirectory, fileInfo.getDocumentName(), fileInfo.getVersion(), fileInfo.getData().length());
+    /**
+     * Write the file information in the correct format for the server file.
+     *
+     * @param pathToFile Directory where file was read.
+     * @param fileInfo        File information you want to write.
+     * @throws XMLStreamException XML stream error.
+     */
+    public void writeAFileInfoInServerFile(String pathToFile, FileInfo fileInfo) throws XMLStreamException {
+        writeAFileInfoInServerFile(pathToFile, fileInfo.getDocumentName(), fileInfo.getVersion(), fileInfo.getData().length());
     }
 
     private void writeAFileInfoInServerFile(String pathToFile, String documentName, String version, long length) throws XMLStreamException {

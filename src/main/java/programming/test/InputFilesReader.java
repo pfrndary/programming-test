@@ -26,10 +26,18 @@ final class InputFilesReader {
         factory = XMLInputFactory.newInstance();
     }
 
-    void read(String filename, ConsumerWithException<FileInfo, XMLStreamException> consumer) throws FileNotFoundException, XMLStreamException {
-        final XMLStreamReader streamReader = factory.createXMLStreamReader(filename, new FileInputStream(filename));
+    /**
+     * Read and consume the data read.
+     *
+     * @param absolutePath Absolute path to the xml file.
+     * @param consumer     A lambda expression you can use to specify what you want to do with the data.
+     * @throws FileNotFoundException The file does not exists.
+     * @throws XMLStreamException    XML error.
+     */
+    void read(String absolutePath, ConsumerWithException<FileInfo, XMLStreamException> consumer) throws FileNotFoundException, XMLStreamException {
+        final XMLStreamReader streamReader = factory.createXMLStreamReader(absolutePath, new FileInputStream(absolutePath));
         while (streamReader.hasNext()) {
-            logger.info("Reading " + filename);
+            logger.info("Reading " + absolutePath);
             streamReader.next();
             if (streamReader.getEventType() == XMLStreamConstants.START_ELEMENT && FILE_TAG.equals(streamReader.getName().toString())) {
                 final FileInfo fileInfo = extractFileInfo(streamReader);
@@ -38,13 +46,13 @@ final class InputFilesReader {
         }
     }
 
-
     private FileInfo extractFileInfo(XMLStreamReader streamReader) throws XMLStreamException {
         String currentTag = null;
         String data = null;
         String version = null;
         String documentName = null;
 
+        // Parse until we find the closed FILE_TAG
         while (streamReader.getEventType() != XMLStreamConstants.END_ELEMENT || !streamReader.getName().toString().equals(FILE_TAG)) {
             switch (streamReader.getEventType()) {
                 case XMLStreamConstants.START_ELEMENT:
