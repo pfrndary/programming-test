@@ -5,6 +5,7 @@ import programming.test.generator.ClientFileGenerator;
 import programming.test.generator.ServerFileGenerator;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -24,13 +25,14 @@ public final class DictionaryGenerator {
     private String outputDirectoryForServerFile;
     private String outputDirectoryForClientFile;
 
-    public static void main(String... parameters) throws IOException, XMLStreamException {
+    public static void main(String... parameters) {
         final DictionaryGenerator dictionaryGenerator = new DictionaryGenerator();
-        dictionaryGenerator.init(parameters);
-        dictionaryGenerator.buildDictionary();
+        dictionaryGenerator.validateAndInit(parameters);
+        dictionaryGenerator.buildClientAndServerDictionary();
     }
 
-    private void init(String[] parameters) {
+    private void validateAndInit(String[] parameters) {
+        // Greater or equal if you want to add extra parameter for the JVM at runtime
         if (parameters.length >= NBR_PARAMETERS) {
             for (int i = 0; i < NBR_PARAMETERS; i++) {
                 final String parameter = parameters[i++];
@@ -45,7 +47,7 @@ public final class DictionaryGenerator {
                         outputDirectoryForServerFile = parameters[i];
                         break;
                     default:
-                        stopWithErrorMessage("The following flag is not valid " + parameter);
+                        stopWithErrorMessageAndUsage("The following flag is not valid " + parameter);
                 }
             }
         } else {
@@ -60,28 +62,43 @@ public final class DictionaryGenerator {
         final Path pathOutputDirectoryForClientFile = Paths.get(outputDirectoryForClientFile);
         final Path pathOutputDirectoryForServerFile = Paths.get(outputDirectoryForServerFile);
         if (!Files.isDirectory(pathInputDirectoryFiles)) {
-            stopWithErrorMessage("The provided input directory does not exist : " + pathInputDirectoryFiles);
+            stopWithErrorMessageAndUsage("The provided input directory does not exist : " + pathInputDirectoryFiles);
         }
         if (!Files.isDirectory(pathOutputDirectoryForClientFile)) {
-            stopWithErrorMessage("The provided output directory for the client file does not exist : " + pathOutputDirectoryForClientFile);
+            stopWithErrorMessageAndUsage("The provided output directory for the client file does not exist : " + pathOutputDirectoryForClientFile);
         }
         if (!Files.isDirectory(pathOutputDirectoryForServerFile)) {
-            stopWithErrorMessage("The provided output directory for the server file does not exist : " + pathOutputDirectoryForServerFile);
+            stopWithErrorMessageAndUsage("The provided output directory for the server file does not exist : " + pathOutputDirectoryForServerFile);
         }
     }
 
-
-    private void buildDictionary() throws IOException, XMLStreamException {
+    private void buildClientAndServerDictionary() {
         final ServerFileGenerator serverFileGenerator = new ServerFileGenerator();
         final ClientFileGenerator clientFileGenerator = new ClientFileGenerator();
-        serverFileGenerator.initFile(outputDirectoryForServerFile);
-        clientFileGenerator.initFile(outputDirectoryForClientFile);
+        try {
+            serverFileGenerator.initFile(outputDirectoryForServerFile);
+            clientFileGenerator.initFile(outputDirectoryForClientFile);
+        } catch (IOException | XMLStreamException e) {
+            logger.error("failed to initialize the output files.", e);
+        }
+
+        parseAllFiles(inputDirectoryFiles, serverFileGenerator, clientFileGenerator);
+
+        try {
+            serverFileGenerator.close();
+            clientFileGenerator.close();
+        } catch (XMLStreamException e) {
+            logger.error("failed to close the output files.", e);
+        }
+    }
+
+    private void parseAllFiles(String inputDirectoryFiles, ServerFileGenerator serverFileGenerator, ClientFileGenerator clientFileGenerator) {
         // DirectoryStream is softer for the JVM, we don't load all the files in memory
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(inputDirectoryFiles))) {
             final InputFilesReader inputFilesReader = new InputFilesReader();
             for (Path path : directoryStream) {
-                // TODO manage files recursively ?
                 if (Files.isDirectory(path)) {
+                    parseAllFiles(path.toAbsolutePath().toString(), serverFileGenerator, clientFileGenerator);
                     continue;
                 }
                 inputFilesReader.init();
@@ -91,24 +108,16 @@ public final class DictionaryGenerator {
                         clientFileGenerator.writeAFileInfoInServerFile(f);
                         serverFileGenerator.writeAFileInfoInServerFile(pathToFile, f);
                     });
-                } catch (XMLStreamException e) {
-                    logger.error(e);
+                } catch (XMLStreamException | FileNotFoundException e) {
+                    logger.warn("Filed to parse a file. Skipping : " + pathToFile, e);
                 }
             }
-        } catch (IOException ex) {
-            stopWithException(ex);
+        } catch (IOException e) {
+            logger.warn("Failed to list a directory. Skipping : " + inputDirectoryFiles, e);
         }
-        serverFileGenerator.close();
-        clientFileGenerator.close();
     }
 
-    private void stopWithException(Throwable t) {
-        logger.error(t);
-        printUsage();
-        System.exit(-1);
-    }
-
-    private void stopWithErrorMessage(String s) {
+    private void stopWithErrorMessageAndUsage(String s) {
         logger.error(s);
         printUsage();
         System.exit(-1);
